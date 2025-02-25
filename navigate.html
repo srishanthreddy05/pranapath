@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigate to Patient</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script>
+        // Hardcoded test location for patient
+        const userLat = 17.420239; // Example: Hyderabad
+        const userLng = 78.655724;
+
+        function showMap() {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const driverLat = position.coords.latitude;
+                const driverLng = position.coords.longitude;
+
+                // Google Maps Embed URL for navigation
+                const mapUrl = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyD1ZnITeqwr7gt6pMeGfnlR-EBL1kYPbXA&origin=${driverLat},${driverLng}&destination=${userLat},${userLng}&mode=driving`;
+
+                document.getElementById('map').innerHTML = `<iframe width="100%" height="500px" src="${mapUrl}" allowfullscreen></iframe>`;
+            }, (error) => {
+                alert("Unable to get current location. Using default driver location.");
+                console.error(error);
+
+                // Use a test driver location if geolocation fails
+                const testDriverLat = 17.420239; // Example: Secunderabad
+                const testDriverLng = 78.655724;
+
+                const mapUrl = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyD1ZnITeqwr7gt6pMeGfnlR-EBL1kYPbXA&origin=${testDriverLat},${testDriverLng}&destination=${userLat},${userLng}&mode=driving`;
+
+                document.getElementById('map').innerHTML = `<iframe width="100%" height="500px" src="${mapUrl}" allowfullscreen></iframe>`;
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>🚑 Navigate to Patient</h2>
+
+    <div id="patientDetails">
+        <p>👤 Name: John Doe</p>
+        <p>📞 Phone: +91 9876543210</p>
+        <p>🩸 Blood Group: O+</p>
+        <p>📍 Location: 17.4508, 78.6837 (Test Data)</p>
+    </div>
+
+    <button onclick="showMap()">📍 Navigate to Patient</button>
+
+    <!-- Google Maps Section -->
+    <div id="map" style="width: 100%; height: 500px; margin-top: 10px;"></div>
+</body>
+</html>

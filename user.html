@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ambulance Service</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script type="module">
+        import { db, ref, set } from './firebase-config.js';
+    
+        // Function to get user's location automatically
+        function getLocation(callback) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const location = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    callback(location);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+    
+        // Function to send ambulance request
+        function sendRequest() {
+            const userName = localStorage.getItem('userName');
+            const userNumber = localStorage.getItem('userNumber');
+            const userBloodGroup = localStorage.getItem('userBloodGroup');
+    
+            if (!userName || !userNumber || !userBloodGroup) {
+                alert("User details are missing!");
+                return;
+            }
+    
+            getLocation((location) => {
+                set(ref(db, 'requests/' + userNumber), {
+                    name: userName,
+                    number: userNumber,
+                    bloodGroup: userBloodGroup,
+                    location: location
+                })
+                .then(() => {
+                    alert('🚑 Request Sent to Nearby Ambulance!');
+                })
+                .catch((error) => {
+                    console.error("Error sending request: ", error);
+                    alert("Failed to send request.");
+                });
+            });
+        }
+    
+        // Store user details locally and send to Firebase
+        function handleLogin(event) {
+            event.preventDefault();
+    
+            const userName = document.getElementById('userName').value;
+            const userNumber = document.getElementById('userNumber').value;
+            const userBloodGroup = document.getElementById('userBloodGroup').value;
+    
+            if (!userName || !userNumber || !userBloodGroup) {
+                alert("Please fill all fields!");
+                return;
+            }
+    
+            localStorage.setItem('userName', userName);
+            localStorage.setItem('userNumber', userNumber);
+            localStorage.setItem('userBloodGroup', userBloodGroup);
+    
+            // ✅ Store user details in Firebase
+            set(ref(db, 'users/' + userNumber), {
+                name: userName,
+                number: userNumber,
+                bloodGroup: userBloodGroup
+            })
+            .then(() => {
+                alert("✅ Login successful!");
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('bookingSection').style.display = 'block';
+            })
+            .catch((error) => {
+                console.error("Error saving user data: ", error);
+                alert("❌ Failed to save user data.");
+            });
+        }
+    
+        window.sendRequest = sendRequest;
+        window.handleLogin = handleLogin;
+    </script>
+    
+</head>
+<body>
+
+    <!-- User Login Section -->
+    <section id="loginSection">
+        <form id="userLoginForm" onsubmit="handleLogin(event)">
+            <div class="icon">🚑</div> <!-- Ambulance Icon -->
+            <h2>User Login</h2>
+            <input type="text" id="userName" placeholder="Name" required>
+            <input type="text" id="userNumber" placeholder="Phone Number" required>
+            <input type="text" id="userBloodGroup" placeholder="Blood Group" required>
+            <button type="submit">Login</button>
+        </form>
+    </section>
+
+    <!-- Ambulance Booking Section (Initially Hidden) -->
+    <section id="bookingSection" style="display: none;">
+        <h2>Book Ambulance</h2>
+        <button onclick="sendRequest()">Send Ambulance Request</button>
+    </section>
+
+</body>
+</html>
