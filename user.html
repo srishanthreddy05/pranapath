@@ -1,112 +1,110 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ambulance Service</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <title>User Login with Location Capture</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input, button { padding: 10px; margin: 5px; width: 100%; }
+    </style>
+    <!-- Load Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?AIzaSyD1ZnITeqwr7gt6pMeGfnlR-EBL1kYPbXA"></script>
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+    
     <script type="module">
-        import { db, ref, set } from './firebase-config.js';
-    
-        // Function to get user's location automatically
-        function getLocation(callback) {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const location = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    };
-                    callback(location);
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-    
-        // Function to send ambulance request
-        function sendRequest() {
-            const userName = localStorage.getItem('userName');
-            const userNumber = localStorage.getItem('userNumber');
-            const userBloodGroup = localStorage.getItem('userBloodGroup');
-    
-            if (!userName || !userNumber || !userBloodGroup) {
-                alert("User details are missing!");
-                return;
-            }
-    
-            getLocation((location) => {
-                set(ref(db, 'requests/' + userNumber), {
-                    name: userName,
-                    number: userNumber,
-                    bloodGroup: userBloodGroup,
-                    location: location
-                })
-                .then(() => {
-                    alert('🚑 Request Sent to Nearby Ambulance!');
-                })
-                .catch((error) => {
-                    console.error("Error sending request: ", error);
-                    alert("Failed to send request.");
-                });
-            });
-        }
-    
-        // Store user details locally and send to Firebase
+        // Firebase configuration
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBje44kEv3bsmIP_x5_LK2YkkKDq9hJFfU",
+            authDomain: "ambulancemanagementsystem0103.firebaseapp.com",
+            databaseURL: "https://ambulancemanagementsystem0103-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ambulancemanagementsystem0103",
+            storageBucket: "ambulancemanagementsystem0103.appspot.com",
+            messagingSenderId: "492214508421",
+            appId: "1:492214508421:web:f2b626eff3ae7c8b73c2ec"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let userNumber = "";
+
+        // Handle user login
         function handleLogin(event) {
             event.preventDefault();
-    
-            const userName = document.getElementById('userName').value;
-            const userNumber = document.getElementById('userNumber').value;
-            const userBloodGroup = document.getElementById('userBloodGroup').value;
-    
+            
+            const userName = document.getElementById('userName').value.trim();
+            userNumber = document.getElementById('userNumber').value.trim();
+            const userBloodGroup = document.getElementById('userBloodGroup').value.trim();
+
             if (!userName || !userNumber || !userBloodGroup) {
                 alert("Please fill all fields!");
                 return;
             }
-    
-            localStorage.setItem('userName', userName);
-            localStorage.setItem('userNumber', userNumber);
-            localStorage.setItem('userBloodGroup', userBloodGroup);
-    
-            // ✅ Store user details in Firebase
+
             set(ref(db, 'users/' + userNumber), {
                 name: userName,
                 number: userNumber,
                 bloodGroup: userBloodGroup
-            })
-            .then(() => {
-                alert("✅ Login successful!");
+            }).then(() => {
+                alert("✅ Login successful! Data saved.");
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('bookingSection').style.display = 'block';
-            })
-            .catch((error) => {
-                console.error("Error saving user data: ", error);
-                alert("❌ Failed to save user data.");
+            }).catch((error) => {
+                alert("❌ Error saving user data: " + error.message);
             });
         }
-    
-        window.sendRequest = sendRequest;
+
+        function sendRequest() {
+            if (!userNumber) {
+                alert("❌ Please login first!");
+                return;
+            }
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    
+                    set(ref(db, 'users/' + userNumber + '/location'), {
+                        latitude: latitude,
+                        longitude: longitude
+                    }).then(() => {
+                        alert("🚑 Ambulance request sent! Location stored.");
+                    }).catch((error) => {
+                        alert("❌ Error saving location: " + error.message);
+                    });
+                }, (error) => {
+                    console.error("Error fetching location: ", error);
+                    alert("❌ Failed to get location.");
+                }, { enableHighAccuracy: true });
+            } else {
+                alert("❌ Geolocation is not supported by this browser.");
+            }
+        }
+
         window.handleLogin = handleLogin;
+        window.sendRequest = sendRequest;
     </script>
-    
 </head>
 <body>
-
-    <!-- User Login Section -->
     <section id="loginSection">
+        <h2>User Login</h2>
         <form id="userLoginForm" onsubmit="handleLogin(event)">
-            <div class="icon">🚑</div> <!-- Ambulance Icon -->
-            <h2>User Login</h2>
             <input type="text" id="userName" placeholder="Name" required>
             <input type="text" id="userNumber" placeholder="Phone Number" required>
             <input type="text" id="userBloodGroup" placeholder="Blood Group" required>
             <button type="submit">Login</button>
         </form>
     </section>
-
-    <!-- Ambulance Booking Section (Initially Hidden) -->
+    
     <section id="bookingSection" style="display: none;">
         <h2>Book Ambulance</h2>
         <button onclick="sendRequest()">Send Ambulance Request</button>
     </section>
-
 </body>
 </html>
