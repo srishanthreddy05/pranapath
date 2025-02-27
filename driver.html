@@ -59,11 +59,18 @@
                     const driverLat = position.coords.latitude;
                     const driverLng = position.coords.longitude;
 
+                    // Save the accepted request
                     set(ref(db, `accepted/${driverID}`), {
                         driverID: driverID,
                         userNumber: userNumber,
                         driverLocation: { latitude: driverLat, longitude: driverLng }
                     }).then(() => {
+                        // Save driver's live location
+                        set(ref(db, `drivers/${driverID}/location`), {
+                            latitude: driverLat,
+                            longitude: driverLng
+                        });
+
                         localStorage.setItem('acceptedUser', userNumber);
                         window.location.href = "navigate.html";
                     }).catch((error) => {
