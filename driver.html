@@ -8,24 +8,27 @@
 
         function loadRequests() {
             const requestsContainer = document.getElementById('requests');
-            requestsContainer.innerHTML = "<p>Loading...</p>"; // Show loading message
+            requestsContainer.innerHTML = "<p>Loading...</p>";
 
-            onValue(ref(db, 'requests'), (snapshot) => {
-                requestsContainer.innerHTML = ''; // Clear previous data
-                const requests = snapshot.val();
+            onValue(ref(db, 'users'), (snapshot) => {
+                requestsContainer.innerHTML = '';
+                const users = snapshot.val();
 
-                if (requests) {
-                    for (let key in requests) {
-                        const req = requests[key];
-                        const requestElement = document.createElement('div');
-                        requestElement.classList.add('request');
-                        requestElement.innerHTML = `
-                            <p>👤 Name: ${req.name}</p>
-                            <p>📞 Number: ${req.number}</p>
-                            <p>🩸 Blood Group: ${req.bloodGroup}</p>
-                            <button class="accept-btn" data-id="${key}">✅ Accept</button>
-                        `;
-                        requestsContainer.appendChild(requestElement);
+                if (users) {
+                    for (let key in users) {
+                        const user = users[key];
+                        if (user.location) { 
+                            const requestElement = document.createElement('div');
+                            requestElement.classList.add('request');
+                            requestElement.innerHTML = `
+                                <p>👤 Name: ${user.name}</p>
+                                <p>📞 Number: ${user.number}</p>
+                                <p>🩸 Blood Group: ${user.bloodGroup}</p>
+                                <p>📍 Location: (${user.location.latitude}, ${user.location.longitude})</p>
+                                <button class="accept-btn" data-id="${key}">✅ Accept</button>
+                            `;
+                            requestsContainer.appendChild(requestElement);
+                        }
                     }
 
                     document.querySelectorAll('.accept-btn').forEach(button => {
@@ -34,7 +37,6 @@
                             acceptRequest(userNumber);
                         });
                     });
-
                 } else {
                     requestsContainer.innerHTML = '<p>No requests available.</p>';
                 }
@@ -55,8 +57,8 @@
                 driverID: driverID,
                 userNumber: userNumber
             }).then(() => {
-                localStorage.setItem('acceptedUser', userNumber); // Store accepted request for navigation
-                window.location.href = "navigate.html"; // Redirect to navigation page
+                localStorage.setItem('acceptedUser', userNumber);
+                window.location.href = "navigate.html";
             }).catch((error) => {
                 alert("Error accepting request: " + error.message);
             });
@@ -95,8 +97,6 @@
     </script>
 </head>
 <body>
-
-    <!-- 🚓 Driver Login Section -->
     <section id="loginSection">
         <form id="driverLoginForm" onsubmit="handleLogin(event)">
             <div class="icon">🚓</div>
@@ -108,11 +108,9 @@
         </form>
     </section>
 
-    <!-- 🚑 Driver Requests Section (Initially Hidden) -->
     <section id="requestsSection" style="display: none;">
         <h2>🚨 Ambulance Requests</h2>
         <div id="requests"></div>
     </section>
-
 </body>
 </html>
