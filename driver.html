@@ -3,6 +3,7 @@
 <head>
     <title>Driver Login & Requests</title>
     <link rel="stylesheet" href="assets/css/styles.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1ZnITeqwr7gt6pMeGfnlR-EBL1kYPbXA"></script>
     <script type="module">
         import { db, ref, set, onValue } from './firebase-config.js';
 
@@ -53,15 +54,28 @@
                 return;
             }
 
-            set(ref(db, `accepted/${driverID}`), {
-                driverID: driverID,
-                userNumber: userNumber
-            }).then(() => {
-                localStorage.setItem('acceptedUser', userNumber);
-                window.location.href = "navigate.html";
-            }).catch((error) => {
-                alert("Error accepting request: " + error.message);
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const driverLat = position.coords.latitude;
+                    const driverLng = position.coords.longitude;
+
+                    set(ref(db, `accepted/${driverID}`), {
+                        driverID: driverID,
+                        userNumber: userNumber,
+                        driverLocation: { latitude: driverLat, longitude: driverLng }
+                    }).then(() => {
+                        localStorage.setItem('acceptedUser', userNumber);
+                        window.location.href = "navigate.html";
+                    }).catch((error) => {
+                        alert("Error accepting request: " + error.message);
+                    });
+                }, (error) => {
+                    alert("Unable to get current location.");
+                    console.error("❌ Location Error:", error);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
         }
 
         function handleLogin(event) {
